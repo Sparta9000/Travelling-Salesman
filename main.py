@@ -10,12 +10,16 @@ circleRadius = 5
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 GREEN = (0, 255, 0)
+RED = (255, 0, 0)
 
 gameDisplay = pygame.display.set_mode((displayWidth, displayHeight))
 pygame.display.set_caption('Travelling Salesman')
 
+font = pygame.font.Font('freesansbold.ttf', 15)
+
 running = True
 start = False
+cost = 0
 
 points = []
 
@@ -61,6 +65,12 @@ def all_done():
         
     return True
 
+def set_points(score):
+    text = font.render(f"Cost: {int(score)}", True, WHITE)
+    textRect = text.get_rect()
+    textRect.center = displayWidth//12, displayHeight//12
+    gameDisplay.blit(text, textRect)
+
 while running:
     #start = False
     for event in pygame.event.get():
@@ -75,8 +85,15 @@ while running:
 
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
+                cost = 0
                 #print(event)
                 start = True
+                for point in points:
+                    point.done = False
+            elif event.key == pygame.K_BACKSPACE:
+                cost = 0
+                points = []
+                start = False
 
         #print(event)
 
@@ -85,29 +102,39 @@ while running:
     if start:
         if points:
             point = points[0]
-            while point.done:
+            while point and point.done:
                 point = point.next
 
-            i = points.index(point)
+            if point:
+                i = points.index(point)
 
-            for j, point2 in enumerate(points):
-                if j != i:
-                    if not point2.done:
-                        if point2 not in point.values:
-                            point.next = point2
-                            point.values[point2] = point.distance(point2)
-                            break
-            else:
-                if point.values:
-                    point.next = min(point.values, key=lambda x: point.values[x])
+                for j, point2 in enumerate(points):
+                    if j != i:
+                        if not point2.done:
+                            if point2 not in point.values:
+                                point.next = point2
+                                point.values[point2] = point.distance(point2)
+                                break
+                else:
+                    point.next = None
+                    if point.values:
+                        point.next = min(point.values, key=lambda x: point.values[x])
+                        cost += point.values[point.next]
                     point.done = True
+                    point.values.clear()
+
+            else:
+                start = False
+                
 
     for point in points:
         if point.next:
             pygame.draw.line(gameDisplay, WHITE, point.getTuple(), point.next.getTuple())
 
     for point in points:
-        pygame.draw.circle(gameDisplay, GREEN, point.getTuple(), circleRadius)
+        pygame.draw.circle(gameDisplay, GREEN if point.done else RED, point.getTuple(), circleRadius)
+
+    set_points(cost)
 
     pygame.display.update()
 
