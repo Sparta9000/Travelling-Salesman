@@ -20,6 +20,7 @@ font = pygame.font.Font('freesansbold.ttf', 15)
 running = True
 start = False
 cost = 0
+last = None
 
 points = []
 
@@ -88,12 +89,16 @@ while running:
                 cost = 0
                 #print(event)
                 start = True
+                last = None
                 for point in points:
                     point.done = False
             elif event.key == pygame.K_BACKSPACE:
                 cost = 0
                 points = []
                 start = False
+                last = None
+            elif event.key == pygame.K_RIGHT:
+                start = True
 
         #print(event)
 
@@ -117,6 +122,7 @@ while running:
                                 break
                 else:
                     point.next = None
+                    last = point
                     if point.values:
                         point.next = min(point.values, key=lambda x: point.values[x])
                         cost += point.values[point.next]
@@ -124,12 +130,16 @@ while running:
                     point.values.clear()
 
             else:
+                if last:
+                    cost += last.distance(points[0])
                 start = False
                 
 
     for point in points:
         if point.next:
             pygame.draw.line(gameDisplay, WHITE, point.getTuple(), point.next.getTuple())
+    if points and last:
+        pygame.draw.line(gameDisplay, WHITE, points[0].getTuple(), last.getTuple())
 
     for point in points:
         pygame.draw.circle(gameDisplay, GREEN if point.done else RED, point.getTuple(), circleRadius)
